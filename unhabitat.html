@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CIF Web App — UN-Habitat / Donors / Government</title>
+<style>
+  :root{
+    --bg:#0f172a; --panel:#111827; --muted:#1f2937; --text:#e5e7eb; --sub:#9ca3af; --brand:#22d3ee;
+    --ring: rgba(34,211,238,.18); --ok:#34d399; --warn:#f59e0b; --bad:#ef4444;
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:linear-gradient(180deg,#0b1223,#0f172a 50%); color:var(--text);
+       font: 15px/1.45 system-ui, Segoe UI, Roboto, Arial, sans-serif}
+  .wrap{max-width:1100px; margin:0 auto; padding:24px}
+  .brand{display:flex; align-items:center; gap:12px; margin-bottom:16px}
+  .logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--brand),#60a5fa)}
+  h1{margin:0;font-size:1.25rem}
+  .card{background:var(--panel); border:1px solid #0b1223; border-radius:14px; padding:16px; box-shadow:0 10px 28px rgba(0,0,0,.4)}
+  .grid{display:grid; gap:14px}
+  @media(min-width:960px){ .lg-2{grid-template-columns:1.2fr .8fr} }
+  .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+  .spacer{flex:1}
+  label{font-size:.9rem; color:var(--sub)}
+  input, select, textarea{
+    width:100%; background:#0b1223; color:var(--text); border:1px solid #1e293b; border-radius:10px; padding:10px 12px;
+    outline:none; transition:border-color .15s, box-shadow .15s
+  }
+  input:focus, select:focus, textarea:focus{border-color:var(--brand); box-shadow:0 0 0 4px var(--ring)}
+  .field{display:flex; flex-direction:column; gap:6px}
+  .btn{background:var(--brand); color:#041016; border:none; border-radius:10px; padding:10px 14px; font-weight:700; cursor:pointer; box-shadow:0 8px 20px var(--ring)}
+  .btn.secondary{background:transparent; color:var(--text); border:1px solid #2a3347}
+  .btn.danger{background:var(--bad)}
+  .note{color:var(--sub); font-size:.92rem}
+  .nav{background:#0b1223; border:1px solid #1e293b; border-radius:12px; padding:10px 12px; margin:14px 0}
+  .role{padding:6px 10px; border:1px solid #274364; border-radius:999px; color:#7dd3fc}
+  table{width:100%; border-collapse:collapse; overflow:hidden; border-radius:10px}
+  th,td{padding:10px 12px; border-bottom:1px solid #1f2937; vertical-align:top}
+  th{color:#93c5fd; background:#0b1223; text-align:left}
+  tr:hover td{background:#0d152a}
+  .pill{display:inline-block; padding:.18rem .6rem; border-radius:999px; border:1px solid #334155; color:#cbd5e1; font-size:.8rem}
+  .summary{display:grid; gap:10px; grid-template-columns:repeat(2,1fr)}
+  @media(min-width:900px){ .summary{grid-template-columns:repeat(4,1fr)} }
+  .stat{background:#0b1223;border:1px solid #1e293b;border-radius:10px;padding:10px}
+  .stat h4{margin:0; font-size:.8rem; color:#9ca3af}
+  .stat p{margin:6px 0 0; font-size:1.15rem; font-weight:800}
+  .hide{display:none !important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand"><div class="logo"></div><h1>Cities Investment Facility — Role-Based Web Application</h1></div>
+
+  <!-- AUTH -->
+  <section id="auth" class="card">
+    <div class="grid lg-2">
+      <div>
+        <h3>Log in</h3>
+        <div class="field"><label for="loginUser">Username</label><input id="loginUser" autocomplete="username"></div>
+        <div class="field"><label for="loginPass">Password</label><input id="loginPass" type="password" autocomplete="current-password"></div>
+        <button id="loginBtn" class="btn">Sign In</button>
+        <div id="authMsg" class="note" style="margin-top:8px;"></div>
+      </div>
+      <div>
+        <h3>Create account</h3>
+        <div class="field"><label for="regUser">Username</label><input id="regUser" autocomplete="username"></div>
+        <div class="field"><label for="regPass">Password</label><input id="regPass" type="password" autocomplete="new-password"></div>
+        <div class="field">
+          <label for="regRole">Role</label>
+          <select id="regRole">
+            <option value="UN">UN-Habitat Personnel</option>
+            <option value="DONOR">Donor</option>
+            <option value="GOV">Government Authority</option>
+          </select>
+        </div>
+        <button id="regBtn" class="btn secondary">Create Account</button>
+        <div class="note">Demo only: credentials are stored in your browser (localStorage).</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- NAV -->
+  <section id="nav" class="nav hide">
+    <div class="row">
+      <div>Signed in as <strong id="navUser">—</strong></div>
+      <div class="role" id="navRole">—</div>
+      <div class="spacer"></div>
+      <button id="logoutBtn" class="btn secondary">Logout</button>
+    </div>
+  </section>
+
+  <!-- UN-HABITAT VIEW -->
+  <section id="viewUN" class="hide grid lg-2">
+    <div class="card">
+      <h3>Interface — UN-Habitat: Input Project Expenditure (Read/Write) & Display (Read-Only)</h3>
+      <div class="grid" style="grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="field"><label>Date</label><input id="expDate" type="date"></div>
+        <div class="field">
+          <label>Category</label>
+          <select id="expCat">
+            <option>Personnel</option><option>Consultancy</option><option>Travel</option>
+            <option>Equipment</option><option>Workshops</option><option>Other</option>
+          </select>
+        </div>
+        <div class="field"><label>Amount (USD)</label><input id="expAmt" type="number" min="0" step="0.01" placeholder="0.00"></div>
+        <div class="field"><label>Description</label><input id="expDesc" placeholder="e.g., Feasibility consultant, Week 1"></div>
+      </div>
+      <div class="row" style="margin:8px 0 6px">
+        <button id="addExpBtn" class="btn">Add Expenditure</button>
+        <div class="spacer"></div>
+        <span class="note">The table below is read-only (mirrors what donors see).</span>
+      </div>
+      <div class="summary" style="margin:10px 0">
+        <div class="stat"><h4>Total Expenditure</h4><p id="unTotal">$0.00</p></div>
+        <div class="stat"><h4>Transactions</h4><p id="unCount">0</p></div>
+        <div class="stat"><h4>Top Category</h4><p id="unTop">—</p></div>
+        <div class="stat"><h4>Last Update</h4><p id="unLast">—</p></div>
+      </div>
+      <div style="overflow:auto">
+        <table id="unExpTable">
+          <thead><tr><th>Date</th><th>Category</th><th>Amount</th><th>Description</th><th>Entered By</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <div id="unExpEmpty" class="note">No expenditures yet.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Interface — UN-Habitat: Input Project Status (Read/Write)</h3>
+      <div class="grid" style="grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="field">
+          <label>Phase</label>
+          <select id="stPhase">
+            <option>Inception</option><option>Data Collection</option><option>Feasibility Analysis</option>
+            <option>Stakeholder Review</option><option>Final Reporting</option>
+          </select>
+        </div>
+        <div class="field"><label>Progress %</label><input id="stProg" type="number" min="0" max="100" step="1" value="0"></div>
+      </div>
+      <div class="field"><label>Key Updates</label><textarea id="stUpdates" placeholder="What changed since last update?"></textarea></div>
+      <div class="field"><label>Risks & Issues</label><textarea id="stRisks" placeholder="Known risks, issues, mitigations."></textarea></div>
+      <button id="addStatusBtn" class="btn">Add Status Update</button>
+      <div class="note" style="margin-top:8px">Government has read-only access to status (see their interface).</div>
+    </div>
+  </section>
+
+  <!-- DONOR VIEW -->
+  <section id="viewDonor" class="hide card">
+    <h3>Interface — Donors: Expenditure Transparency (Read-Only)</h3>
+    <div class="summary" style="margin:10px 0">
+      <div class="stat"><h4>Total Expenditure</h4><p id="dTotal">$0.00</p></div>
+      <div class="stat"><h4>Transactions</h4><p id="dCount">0</p></div>
+      <div class="stat"><h4>Top Category</h4><p id="dTop">—</p></div>
+      <div class="stat"><h4>Last Update</h4><p id="dLast">—</p></div>
+    </div>
+    <div style="overflow:auto">
+      <table id="dTable">
+        <thead><tr><th>Date</th><th>Category</th><th>Amount</th><th>Description</th><th>Entered By</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <div id="dEmpty" class="note">No expenditures yet.</div>
+    </div>
+  </section>
+
+  <!-- GOVERNMENT VIEW -->
+  <section id="viewGov" class="hide card">
+    <h3>Interface — Government Authorities: Project Status (Read-Only)</h3>
+    <div style="overflow:auto">
+      <table id="gTable">
+        <thead><tr><th>Date</th><th>Phase</th><th>Progress</th><th>Key Updates</th><th>Risks & Issues</th><th>Entered By</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <div id="gEmpty" class="note">No status updates yet.</div>
+    </div>
+  </section>
+</div>
+
+<script>
+/* ===== Utilities & Local “DB” (localStorage) ===== */
+const KEYS = { USERS:'cif_users', SESSION:'cif_session', EXP:'cif_exp', STATUS:'cif_status' };
+const $ = s => document.querySelector(s);
+function load(k, fb){ try{ return JSON.parse(localStorage.getItem(k)) ?? fb }catch{ return fb } }
+function save(k,v){ localStorage.setItem(k, JSON.stringify(v)) }
+function uuid(){ return (crypto?.randomUUID?.() || (Date.now().toString(36)+Math.random().toString(36).slice(2,8))) }
+function today(){ return new Date().toISOString().slice(0,10) }
+function niceDate(d){ const x=new Date(d); return isNaN(x)? d : x.toLocaleDateString() }
+function money(n){ return (n||0).toLocaleString(undefined,{style:'currency',currency:'USD'}) }
+
+/* Seed demo data on first visit */
+(function seed(){
+  if(!load(KEYS.USERS,null)){
+    save(KEYS.USERS, [
+      {u:'un_staff',p:'Pass@123',role:'UN'},
+      {u:'donor_demo',p:'Pass@123',role:'DONOR'},
+      {u:'gov_demo',p:'Pass@123',role:'GOV'}
+    ]);
+  }
+  if(!load(KEYS.EXP,null)){
+    save(KEYS.EXP, [
+      {id:uuid(), date:today(), cat:'Consultancy', amt:3200, desc:'Feasibility consultant (Week 1)', by:'un_staff'},
+      {id:uuid(), date:today(), cat:'Travel', amt:860, desc:'Field visit flights', by:'un_staff'}
+    ]);
+  }
+  if(!load(KEYS.STATUS,null)){
+    save(KEYS.STATUS, [
+      {id:uuid(), date:today(), phase:'Inception', prog:15, updates:'Mobilized team; data room ready.', risks:'Data access delays.', by:'un_staff'}
+    ]);
+  }
+})();
+
+/* ===== Auth ===== */
+function setSession(s){ s? save(KEYS.SESSION,s) : localStorage.removeItem(KEYS.SESSION) }
+function session(){ return load(KEYS.SESSION,null) }
+function show(el){ el.classList.remove('hide') } function hide(el){ el.classList.add('hide') }
+
+function refreshNav(){
+  const s = session();
+  if(s){
+    hide($('#auth')); show($('#nav'));
+    $('#navUser').textContent = s.u; $('#navRole').textContent = s.role;
+  }else{
+    show($('#auth')); hide($('#nav'));
+  }
+}
+
+$('#loginBtn').addEventListener('click', ()=>{
+  const u = $('#loginUser').value.trim(), p = $('#loginPass').value;
+  const users = load(KEYS.USERS, []);
+  const found = users.find(x=> x.u===u && x.p===p);
+  if(!found){ $('#authMsg').textContent = 'Invalid username or password.'; return }
+  $('#authMsg').textContent = '';
+  setSession({u:found.u, role:found.role});
+  route();
+});
+
+$('#regBtn').addEventListener('click', ()=>{
+  const u = $('#regUser').value.trim(), p = $('#regPass').value, role = $('#regRole').value;
+  if(u.length<3){ alert('Username must be at least 3 characters.'); return }
+  if(p.length<6){ alert('Password must be at least 6 characters.'); return }
+  const users = load(KEYS.USERS, []);
+  if(users.some(x=> x.u===u)){ alert('Username already exists.'); return }
+  users.push({u,p,role}); save(KEYS.USERS, users);
+  setSession({u,role}); route();
+});
+
+$('#logoutBtn').addEventListener('click', ()=>{ setSession(null); route() });
+
+/* ===== Router / Views ===== */
+function showOnly(view){
+  [$('#viewUN'), $('#viewDonor'), $('#viewGov')].forEach(hide);
+  if(view) show(view);
+}
+function route(){
+  refreshNav();
+  const s = session();
+  if(!s){ showOnly(null); return }
+  if(s.role==='UN'){ renderUN(); showOnly($('#viewUN')); return }
+  if(s.role==='DONOR'){ renderDonor(); showOnly($('#viewDonor')); return }
+  if(s.role==='GOV'){ renderGov(); showOnly($('#viewGov')); return }
+}
+
+/* ===== UN: Input Expenditure + Status; Read-only displays ===== */
+$('#addExpBtn').addEventListener('click', ()=>{
+  const s = session(); if(!s || s.role!=='UN'){ alert('Only UN-Habitat can add.'); return }
+  const date = $('#expDate').value || today();
+  const cat = $('#expCat').value;
+  const amt = parseFloat($('#expAmt').value);
+  const desc = $('#expDesc').value.trim();
+  if(!(amt>0)){ alert('Enter a valid amount.'); return }
+  const all = load(KEYS.EXP, []); all.push({id:uuid(), date, cat, amt, desc, by:s.u}); save(KEYS.EXP, all);
+  $('#expAmt').value=''; $('#expDesc').value=''; renderUN(); // donor view mirrors sums
+});
+
+$('#addStatusBtn').addEventListener('click', ()=>{
+  const s = session(); if(!s || s.role!=='UN'){ alert('Only UN-Habitat can add.'); return }
+  const phase = $('#stPhase').value;
+  let prog = parseInt($('#stProg').value,10); if(isNaN(prog)||prog<0||prog>100){ alert('Progress 0–100'); return }
+  const updates = $('#stUpdates').value.trim();
+  const risks = $('#stRisks').value.trim();
+  const all = load(KEYS.STATUS, []); all.push({id:uuid(), date:today(), phase, prog, updates, risks, by:s.u}); save(KEYS.STATUS, all);
+  $('#stUpdates').value=''; $('#stRisks').value=''; // render gov table too
+  renderUN();
+});
+
+function renderUN(){
+  // expenditures
+  const exps = load(KEYS.EXP, []).slice().sort((a,b)=> new Date(b.date)-new Date(a.date));
+  const tb = $('#unExpTable tbody'); tb.innerHTML='';
+  if(exps.length===0){ show($('#unExpEmpty')) } else { hide($('#unExpEmpty')) }
+  exps.forEach(r=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${niceDate(r.date)}</td><td><span class="pill">${r.cat}</span></td><td>${money(r.amt)}</td><td>${r.desc||''}</td><td>${r.by}</td>`;
+    tb.appendChild(tr);
+  });
+  // summaries
+  const total = exps.reduce((s,x)=> s+(x.amt||0),0);
+  const counts = {}; exps.forEach(x=> counts[x.cat]=(counts[x.cat]||0)+x.amt);
+  const top = Object.entries(counts).sort((a,b)=> b[1]-a[1])[0]?.[0] ?? '—';
+  const last = exps[0]?.date ? niceDate(exps[0].date) : '—';
+  $('#unTotal').textContent = money(total);
+  $('#unCount').textContent = exps.length;
+  $('#unTop').textContent = top;
+  $('#unLast').textContent = last;
+
+  // also refresh donor & gov read-only mirrors to keep in sync
+  renderDonor(); renderGov();
+}
+
+/* ===== Donor: Read-only Expenditures ===== */
+function renderDonor(){
+  const exps = load(KEYS.EXP, []).slice().sort((a,b)=> new Date(b.date)-new Date(a.date));
+  const tb = $('#dTable tbody'); tb.innerHTML='';
+  if(exps.length===0){ show($('#dEmpty')) } else { hide($('#dEmpty')) }
+  exps.forEach(r=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${niceDate(r.date)}</td><td><span class="pill">${r.cat}</span></td><td>${money(r.amt)}</td><td>${r.desc||''}</td><td>${r.by}</td>`;
+    tb.appendChild(tr);
+  });
+  const total = exps.reduce((s,x)=> s+(x.amt||0),0);
+  const counts = {}; exps.forEach(x=> counts[x.cat]=(counts[x.cat]||0)+x.amt);
+  const top = Object.entries(counts).sort((a,b)=> b[1]-a[1])[0]?.[0] ?? '—';
+  const last = exps[0]?.date ? niceDate(exps[0].date) : '—';
+  $('#dTotal').textContent = money(total);
+  $('#dCount').textContent = exps.length;
+  $('#dTop').textContent = top;
+  $('#dLast').textContent = last;
+}
+
+/* ===== Government: Read-only Status ===== */
+function renderGov(){
+  const sts = load(KEYS.STATUS, []).slice().sort((a,b)=> new Date(b.date)-new Date(a.date));
+  const tb = $('#gTable tbody'); tb.innerHTML='';
+  if(sts.length===0){ show($('#gEmpty')) } else { hide($('#gEmpty')) }
+  sts.forEach(r=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${niceDate(r.date)}</td><td><span class="pill">${r.phase}</span></td><td><strong>${r.prog}%</strong></td><td>${r.updates||''}</td><td>${r.risks||''}</td><td>${r.by}</td>`;
+    tb.appendChild(tr);
+  });
+}
+
+/* ===== Boot ===== */
+route();
+</script>
+</body>
+</html>
